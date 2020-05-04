@@ -1,0 +1,6 @@
+urllib3
+termcolor
+sqlalchemy
+mysql-connector
+requests
+bs4
