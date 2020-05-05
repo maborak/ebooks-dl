@@ -3,6 +3,14 @@ import urllib.request
 
 
 def wget(url: str) -> str:
+    """Request page URL
+
+    Arguments:
+        url {str} -- [description]
+
+    Returns:
+        str -- [description]
+    """
     context = ssl._create_unverified_context()
     req = urllib.request.Request(
         url,

@@ -6,7 +6,7 @@ Base = declarative_base()
 
 
 class BooksTable(Base):
-    __tablename__ = 'letmeread'
+    __tablename__ = 'books'
 
     id = Column(Integer, primary_key=True)
     title = Column(String(255))
@@ -19,7 +19,5 @@ class BooksTable(Base):
     publisher = Column(String(255))
     isbn10 = Column(String(255))
     isbn13 = Column(String(255))
+    thumbnail = Column(String(255))
     description = Column(Text)
-
-    def __repr__(self):
-        return f'User {self.name}'

@@ -3,19 +3,25 @@ from sqlalchemy.orm import sessionmaker
 from orm.db import BooksTable
 from orm.db import Base
 
-engine = create_engine(
-    'mysql+mysqlconnector://root:adalidcampeon@192.168.0.250:3306/letmeread', echo=False)
-
-#Base.metadata.drop_all(engine)
+schema_url = 'mysql+mysqlconnector://root:adalidcampeon@192.168.0.250:3306/letmeread'
+# schema_url = 'sqlite:///db.sqlite'
+engine = create_engine(schema_url, echo=False)
 Base.metadata.create_all(engine)
 
-Session = sessionmaker(bind=engine)
-session = Session()
 
+class DataEngine():
+    session: object = None
 
-class Data():
-    @classmethod
-    def save(book_data: list = []) -> bool:
+    def __init__(self, orm: str = ''):
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+
+    @staticmethod
+    def drop_all():
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+
+    def save(self, book_data: list = []) -> bool:
         c1 = BooksTable(
             title=book_data['title'],
             date=book_data['date'],
@@ -26,15 +32,18 @@ class Data():
             author=book_data['author'],
             publisher=book_data['publisher'],
             isbn10=book_data['isbn10'],
-            isbn13=book_data['isbn13']
+            isbn13=book_data['isbn13'],
+            thumbnail=book_data['thumbnail'],
+            description=book_data['description']
         )
-        session.add(c1)
-        result = session.commit()
+        self.session.add(c1)
+        result = self.session.commit()
         return result
 
     def isset_code(self, code: str = '') -> bool:
-        isset = session.query(BooksTable.id).filter(BooksTable.code == code)
-        return False if isset.first() is None else True
+        isset = self.session.query(BooksTable.id).filter(BooksTable.code == code)
+        r = False if isset.first() is None else True
+        return r
 
-
-db = Data()
+    def get_engine(self):
+        return self.session, BooksTable
