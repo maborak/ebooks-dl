@@ -11,15 +11,17 @@ class Engine(object):
     """
     Engine to process: https://www.letmeread.net
     """
+    __host__ = 'letmeread'
     baseurl: str = "https://www.letmeread.net"
     total_of_pages: int = 0
     total_of_pages_classified: int = 0
     orm: str = ''
     data_engine: str = object
+    pool_process: bool = False
 
     def __init__(self, orm: str = '') -> None:
         self.orm = orm
-        self.data_engine = DataEngine()
+        self.data_engine = DataEngine(orm=self.orm)
 
     def item_save(self, book_data: list, link: object = None) -> bool:
         if link is None:
@@ -51,6 +53,9 @@ class Engine(object):
             'isbn10': "",
             'isbn13': "none",
             'thumbnail': thumb,
+            'engine': 'letmeread',
+            'format': 'text',
+            'size': 0,
             'description': str(description)
         }
         c = bs.find("ul", {'class': 'list-unstyled mb-0'}).findAll("li")
@@ -85,7 +90,7 @@ class Engine(object):
                             data['date'] = d
                         except Exception:
                             pass
-            elif(ititle == "ISBN-10"):
+            elif(ititle =="ISBN-10"):
                 data['isbn10'] = ivalue
             elif(ititle == "ISBN-13"):
                 data['isbn13'] = ivalue
@@ -99,13 +104,10 @@ class Engine(object):
         bs = BeautifulSoup(wget(page_url), 'html.parser')
         nameList = bs.findAll('div', {'class': 'card-body p-2'})
         data = []
-        de = DataEngine(orm = self.orm)
-
+        de = DataEngine(orm=self.orm) if self.pool_process is True else self.data_engine
         for index, i in enumerate(nameList):
             data = i.find('a')
-            # title = data.get_text().strip()
             code = data['href'].replace("/", "")
-            # url = self.baseurl + "/" + code + "/"
             print("\t\titem: " + str(index + 1) + " of " + str(len(nameList)))
             isset = de.isset_code(code)
             if isset is False:
@@ -159,6 +161,7 @@ class Engine(object):
         return entries
 
     def process_page_pool(self, pages: list = []) -> list:
+        self.pool_process = True
         result = []
         for i in pages:
             r = self.process_page(i)
@@ -167,7 +170,8 @@ class Engine(object):
 
     def run(self, start_from_page: int = 1, threads: int = 0, drop_all: bool = False) -> None:
         if drop_all is True:
-            DataEngine.drop_all()
+            de = DataEngine(orm=self.orm)
+            de.drop_all()
         pages = self.pages_all(start_from_page=start_from_page)
         if threads > 0:
             chunked = self.chunkit(pages, threads)

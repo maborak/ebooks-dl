@@ -10,7 +10,7 @@ parser.add_argument('--orm', action="store", type=str, default="sqlite:///db.sql
 
 
 args, _ = parser.parse_known_args()
-a = letmeread.Engine()
+a = letmeread.Engine(orm=args.orm)
 if args.fix is True:
     a.fix()
 else:
