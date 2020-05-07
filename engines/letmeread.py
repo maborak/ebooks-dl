@@ -97,10 +97,8 @@ class Engine(object):
         return data
 
     def process_page(self, page_number: int = 1, dblink: object = None) -> []:
-        print("Processing Page: " + str(page_number) +
-              " of " + str(self.total_of_pages))
-        page_url = self.baseurl + "/page/" + \
-            str(page_number) + "/" if page_number > 1 else self.baseurl
+        print("Processing Page: " + str(page_number) + " of " + str(self.total_of_pages))
+        page_url = self.baseurl + "/page/" + str(page_number) + "/" if page_number > 1 else self.baseurl
         bs = BeautifulSoup(wget(page_url), 'html.parser')
         nameList = bs.findAll('div', {'class': 'card-body p-2'})
         data = []
@@ -108,7 +106,7 @@ class Engine(object):
         for index, i in enumerate(nameList):
             data = i.find('a')
             code = data['href'].replace("/", "")
-            print("\t\titem: " + str(index + 1) + " of " + str(len(nameList)))
+            #print("\t\titem: " + str(index + 1) + " of " + str(len(nameList)))
             isset = de.isset_code(code)
             if isset is False:
                 try:
@@ -141,7 +139,7 @@ class Engine(object):
 
         return out
 
-    def pages_all(self, start_from_page: int = 1) -> []:
+    def num_of_pages_to_process(self, start_from_page: int = 1) -> []:
         """
         Return all the sanitized pages
 
@@ -161,31 +159,41 @@ class Engine(object):
         return entries
 
     def process_page_pool(self, pages: list = []) -> list:
+        """Process pages initiated as threads
+
+        Keyword Arguments:
+            pages {list} -- [description] (default: {[]})
+
+        Returns:
+            list -- [description]
+        """
         self.pool_process = True
         result = []
         for i in pages:
             r = self.process_page(i)
             result.append(r)
-        return True
+        return len(result)
 
     def run(self, start_from_page: int = 1, threads: int = 0, drop_all: bool = False) -> None:
         if drop_all is True:
             de = DataEngine(orm=self.orm)
             de.drop_all()
-        pages = self.pages_all(start_from_page=start_from_page)
+        pages = self.num_of_pages_to_process(start_from_page=start_from_page)
         if threads > 0:
             chunked = self.chunkit(pages, threads)
             with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-                future_to_url = {executor.submit(
+                processed_pool = {executor.submit(
                     self.process_page_pool, bloque): bloque for bloque in chunked}
-                for future in concurrent.futures.as_completed(future_to_url):
-                    _ = future_to_url[future]
+                for future in concurrent.futures.as_completed(processed_pool):
+                    _ = processed_pool[future]
                     try:
                         data = future.result()
                     except Exception as exc:
                         print('generated an exception: %s' % (exc))
                     else:
-                        print('%r page is %r total' % (3, data))
+                        print("Thread finished:")
+                        print(data)
+                        #print('%r page is %r total' % (3, data))
         else:
             for current_page in pages:
                 self.process_page(current_page)

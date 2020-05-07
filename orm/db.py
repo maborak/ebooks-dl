@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, Table, MetaData
+from sqlalchemy import Column, Integer, String, Text, Date, Table, MetaData, Float
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -9,7 +9,7 @@ db_metadata = MetaData()
 class BooksTable(Base):
     __tablename__ = 'books'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer(), primary_key=True)
     title = Column(String(255))
     date = Column(Date())
     pages = Column(Integer())
@@ -25,10 +25,11 @@ class BooksTable(Base):
     engine = Column(String(255))
     format = Column(String(255), default="text")
     size = Column(Integer(), default=0)
+    rating = Column(Float(), default=0.0)
 
 
 bt = Table('books', db_metadata,
-           Column('id', Integer, primary_key=True),
+           Column('id', Integer(), primary_key=True),
            Column('title', String(255)),
            Column('date', Date()),
            Column('pages', Integer(), default=0),
@@ -43,5 +44,6 @@ bt = Table('books', db_metadata,
            Column('description', Text()),
            Column('engine', String(255)),
            Column('format', String(255), default='text'),
-           Column('size', Integer(), default=0)
+           Column('size', Integer(), default=0),
+           Column('rating', Float(), default=0.0)
            )
