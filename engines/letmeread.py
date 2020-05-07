@@ -106,7 +106,7 @@ class Engine(object):
         for index, i in enumerate(nameList):
             data = i.find('a')
             code = data['href'].replace("/", "")
-            #print("\t\titem: " + str(index + 1) + " of " + str(len(nameList)))
+            print("\t\titem: " + str(index + 1) + " of " + str(len(nameList)))
             isset = de.isset_code(code)
             if isset is False:
                 try:
@@ -158,7 +158,7 @@ class Engine(object):
         self.total_of_pages_classified = len(entries)
         return entries
 
-    def process_page_pool(self, pages: list = []) -> list:
+    def process_page_pool(self, data: object = {}) -> list:
         """Process pages initiated as threads
 
         Keyword Arguments:
@@ -168,8 +168,10 @@ class Engine(object):
             list -- [description]
         """
         self.pool_process = True
+        #return True
+        print("[POOL] process: " + str(len(data['bloque'])) + " pages")
         result = []
-        for i in pages:
+        for i in data['bloque']:
             r = self.process_page(i)
             result.append(r)
         return len(result)
@@ -183,7 +185,7 @@ class Engine(object):
             chunked = self.chunkit(pages, threads)
             with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
                 processed_pool = {executor.submit(
-                    self.process_page_pool, bloque): bloque for bloque in chunked}
+                    self.process_page_pool, {'bloque':bloque, 'otro': 999}): bloque for bloque in chunked}
                 for future in concurrent.futures.as_completed(processed_pool):
                     _ = processed_pool[future]
                     try:
