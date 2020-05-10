@@ -5,6 +5,10 @@ from orm.db import BooksTable, bt, db_metadata
 from orm.db import Base
 import termtables as tt
 import json
+from terminaltables import AsciiTable
+import textwrap
+from termcolor import colored
+from utils.number import number_format
 
 
 class DataEngine():
@@ -71,19 +75,45 @@ class DataEngine():
         return self.session, BooksTable
 
     def search(self, criteria: str = '', limit: int = 10, format: str = 'table'):
-        r = self.session.query(BooksTable.title, BooksTable.date, BooksTable.url)\
+        total_in_db = self.session.query(BooksTable.id).count() 
+        r = self.session.query(BooksTable.title, BooksTable.date, BooksTable.pages, BooksTable.url)\
                 .filter(BooksTable.title.like(criteria))\
                 .order_by(desc(BooksTable.date))\
                 .limit(limit)
         data = []
-        header = ['Date', 'Title', 'Url']
+        #print(self.__default__orm)
+        header = [
+            colored('Date', "cyan", attrs=['bold']),
+            colored('Pages', "cyan", attrs=['bold']),
+            colored('Title', "cyan", attrs=['bold']),
+            colored('Url', "cyan", attrs=['bold'])
+        ]
         for book in r:
-            data.append([str(book.date), book.title, book.url])
+            data.append([
+                str(book.date),
+                book.pages,
+                textwrap.fill(book.title, 150),
+                textwrap.fill(book.url, 150)])
         if format == 'table':
             if len(data) == 0:
                 tt.print([[f"No results for: {criteria}"]], style=tt.styles.ascii_thin)
-            else:    
-                tt.print(data, header=header, padding=(0, 1), style=tt.styles.ascii_thin, alignment='lll')
+            else:
+                h = [header]
+                h.extend(data)
+                title = "---| " + colored("Results for:", "yellow") + colored(f" {criteria} ", "green") + \
+                        ", Total DB: " + colored(number_format(total_in_db), "green") + \
+                        ", ORM: " + colored(self.__default__orm, "green") + " |"
+                t = AsciiTable(h, title=title)
+                t.inner_row_border = True
+                t.CHAR_OUTER_TOP_LEFT = "╭"
+                t.CHAR_OUTER_BOTTOM_LEFT = "╰"
+                t.CHAR_OUTER_BOTTOM_RIGHT = "╯"
+                t.CHAR_OUTER_TOP_RIGHT = "╮"
+                t.padding_left = 2
+                t.justify_columns = {0: 'left', 1: 'left', 2: 'left'}
+                print("\n")
+                print(t.table)
+                #tt.print(data, header=header, padding=(0, 1), style=tt.styles.ascii_thin, alignment='lll')
         elif format == 'json':
             print(json.dumps(data))
         return data
