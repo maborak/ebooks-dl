@@ -3,7 +3,6 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from utils.http import wget
 from utils.data import DataEngine
-import concurrent.futures
 
 
 class Engine(object):
@@ -16,16 +15,13 @@ class Engine(object):
     total_of_pages_classified: int = 0
     orm: str = ''
     data_engine: str = object
-    pool_process: bool = False
 
     def __init__(self, orm: str = '', **kwargs) -> None:
         self.orm = orm
         self.data_engine = DataEngine(orm=self.orm)
 
-    def item_save(self, book_data: list, link: object = None) -> bool:
-        if link is None:
-            return False
-        result = link.save(book_data)
+    def item_save(self, book_data: list) -> bool:
+        result = self.data_engine.save(book_data)
         return result
 
     def process_item(self, code: str) -> object:
@@ -96,29 +92,27 @@ class Engine(object):
         return data
 
     def process_page(self, page_number: int = 1, dblink: object = None) -> []:
-        
         print("Processing Page: " + str(page_number) + " of " + str(self.total_of_pages))
         page_url = self.baseurl + "/page/" + str(page_number) + "/" if page_number > 1 else self.baseurl
         bs = BeautifulSoup(wget(page_url), 'html.parser')
         nameList = bs.findAll('div', {'class': 'card-body p-2'})
         data = []
-        de = DataEngine(orm=self.orm) if self.pool_process is True else self.data_engine
         for index, i in enumerate(nameList):
             data = i.find('a')
             code = data['href'].replace("/", "")
             print(f"\t\t[page={page_number}]item: " + str(index + 1) + " of " + str(len(nameList)))
-            isset = de.isset_code(code)
+            isset = self.data_engine.isset_code(code)
             if isset is False:
                 try:
                     book_data = self.process_item(code)
-                    self.item_save(book_data=book_data, link=de)
+                    self.item_save(book_data=book_data)
                     pass
                 except Exception as e:
                     print("algo paso")
                     print(e)
         return True
 
-    def total_pages(self) -> int:
+    def count_total_pages(self) -> int:
         bs = BeautifulSoup(wget(self.baseurl), 'html.parser')
         content = bs.find(
             "li", {'class': 'page-item disabled d-none d-lg-block'})
@@ -127,17 +121,6 @@ class Engine(object):
         total_pages = int(sp[1])
         self.total_of_pages = total_pages
         return total_pages
-
-    @staticmethod
-    def chunkit(seq, num):
-        avg = len(seq) / float(num)
-        out = []
-        last = 0.0
-        while last < len(seq):
-            out.append(seq[int(last):int(last + avg)])
-            last += avg
-
-        return out
 
     def num_of_pages_to_process(self, start_from_page: int = 1) -> []:
         """
@@ -149,7 +132,7 @@ class Engine(object):
         Returns:
             list -- All the pages to be processed
         """
-        total_pages = self.total_pages()
+        total_pages = self.count_total_pages()
         entries = []
         for i in range(total_pages):
             current_page = i + 1
@@ -158,44 +141,10 @@ class Engine(object):
         self.total_of_pages_classified = len(entries)
         return entries
 
-    def process_page_pool(self, data: object = {}) -> list:
-        """Process pages initiated as threads
-
-        Keyword Arguments:
-            pages {list} -- [description] (default: {[]})
-
-        Returns:
-            list -- [description]
-        """
-        self.pool_process = True
-        #return True
-        print("[POOL] process: " + str(len(data['bloque'])) + " pages")
-        result = []
-        for i in data['bloque']:
-            r = self.process_page(i)
-            result.append(r)
-        return len(result)
-
-    def run(self, start_from_page: int = 1, threads: int = 0, drop_all: bool = False) -> None:
+    def run(self, start_from_page: int = 1) -> None:
         pages = self.num_of_pages_to_process(start_from_page=start_from_page)
-        if threads > 0:
-            chunked = self.chunkit(pages, threads)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-                processed_pool = {executor.submit(
-                    self.process_page_pool, {'bloque':bloque, 'otro': 999}): bloque for bloque in chunked}
-                for future in concurrent.futures.as_completed(processed_pool):
-                    _ = processed_pool[future]
-                    try:
-                        data = future.result()
-                    except Exception as exc:
-                        print('generated an exception: %s' % (exc))
-                    else:
-                        print("Thread finished:")
-                        print(data)
-                        #print('%r page is %r total' % (3, data))
-        else:
-            for current_page in pages:
-                self.process_page(current_page)
+        for current_page in pages:
+            self.process_page(current_page)
 
     def fix(self):
         import pprint as pp

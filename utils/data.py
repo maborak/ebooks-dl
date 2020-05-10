@@ -38,26 +38,7 @@ class DataEngine():
 
     def save(self, book_data: list = []) -> bool:
         if self.use_orm is True:
-            #ins = BooksTable().insert().values(title="pito")
-            #return True
-            c1 = BooksTable(
-                title=book_data['title'],
-                date=book_data['date'],
-                pages=book_data['pages'],
-                language=book_data['language'],
-                code=book_data['code'],
-                url=book_data['url'],
-                author=book_data['author'],
-                publisher=book_data['publisher'],
-                isbn10=book_data['isbn10'],
-                isbn13=book_data['isbn13'],
-                thumbnail=book_data['thumbnail'],
-                description=book_data['description'],
-                engine=book_data['engine'],
-                format=book_data['format'],
-                size=book_data['size']
-            )
-            self.session.add(c1)
+            self.session.add(BooksTable(**book_data))
             result = self.session.commit()
         else:
             result = self.engine.execute(bt.insert().values([book_data]))
@@ -81,7 +62,7 @@ class DataEngine():
         pages = data['bloque']
         engine = data['engine']['class']
         eng = engine(**data['engine']['args'])
-        eng.total_pages()
+        eng.count_total_pages()
         for b in pages:
             eng.process_page(page_number=b)
         eng.data_engine.session.close()
