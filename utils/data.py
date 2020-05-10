@@ -1,14 +1,16 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, asc, desc
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select, insert, delete, update
+from sqlalchemy.sql import select
 from orm.db import BooksTable, bt, db_metadata
 from orm.db import Base
+import termtables as tt
+import json
 
 
 class DataEngine():
     session: object = None
     engine: object = None
-    __default__orm: str = 'mysql+mysqlconnector://root:adalidcampeon@192.168.0.250:3306/letmeread'
+    __default__orm: str = ''
     use_orm: bool = True
     db_metadata: object = None
 
@@ -57,7 +59,6 @@ class DataEngine():
         return result
 
     def isset_code(self, code: str = '') -> bool:
-        
         if self.use_orm is True:
             isset = self.session.query(BooksTable.id).filter(BooksTable.code == code)
             r = False if isset.first() is None else True
@@ -68,3 +69,21 @@ class DataEngine():
 
     def get_engine(self):
         return self.session, BooksTable
+
+    def search(self, criteria: str = '', limit: int = 10, format: str = 'table'):
+        r = self.session.query(BooksTable.title, BooksTable.date, BooksTable.url)\
+                .filter(BooksTable.title.like(criteria))\
+                .order_by(desc(BooksTable.date))\
+                .limit(limit)
+        data = []
+        header = ['Date', 'Title', 'Url']
+        for book in r:
+            data.append([str(book.date), book.title, book.url])
+        if format == 'table':
+            if len(data) == 0:
+                tt.print([[f"No results for: {criteria}"]], style=tt.styles.ascii_thin)
+            else:    
+                tt.print(data, header=header, padding=(0, 1), style=tt.styles.ascii_thin, alignment='lll')
+        elif format == 'json':
+            print(json.dumps(data))
+        return data
