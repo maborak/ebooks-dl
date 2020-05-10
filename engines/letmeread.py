@@ -3,7 +3,6 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from utils.http import wget
 from utils.data import DataEngine
-from multiprocessing import Pool
 import concurrent.futures
 
 
@@ -19,7 +18,7 @@ class Engine(object):
     data_engine: str = object
     pool_process: bool = False
 
-    def __init__(self, orm: str = '') -> None:
+    def __init__(self, orm: str = '', **kwargs) -> None:
         self.orm = orm
         self.data_engine = DataEngine(orm=self.orm)
 
@@ -97,6 +96,7 @@ class Engine(object):
         return data
 
     def process_page(self, page_number: int = 1, dblink: object = None) -> []:
+        
         print("Processing Page: " + str(page_number) + " of " + str(self.total_of_pages))
         page_url = self.baseurl + "/page/" + str(page_number) + "/" if page_number > 1 else self.baseurl
         bs = BeautifulSoup(wget(page_url), 'html.parser')
@@ -106,7 +106,7 @@ class Engine(object):
         for index, i in enumerate(nameList):
             data = i.find('a')
             code = data['href'].replace("/", "")
-            print("\t\titem: " + str(index + 1) + " of " + str(len(nameList)))
+            print(f"\t\t[page={page_number}]item: " + str(index + 1) + " of " + str(len(nameList)))
             isset = de.isset_code(code)
             if isset is False:
                 try:
@@ -177,9 +177,6 @@ class Engine(object):
         return len(result)
 
     def run(self, start_from_page: int = 1, threads: int = 0, drop_all: bool = False) -> None:
-        if drop_all is True:
-            de = DataEngine(orm=self.orm)
-            de.drop_all()
         pages = self.num_of_pages_to_process(start_from_page=start_from_page)
         if threads > 0:
             chunked = self.chunkit(pages, threads)

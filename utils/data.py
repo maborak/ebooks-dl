@@ -32,6 +32,7 @@ class DataEngine():
             self.db_metadata.create_all(self.engine)
 
     def drop_all(self):
+        print(colored("Executing DROP in: ","red") + self.__default__orm)
         self.db_metadata.drop_all(self.engine)
         self.db_metadata.create_all(self.engine)
 
@@ -69,10 +70,22 @@ class DataEngine():
         else:
             s = select([bt.c.id]).where(bt.c.code == code)
             r = False if self.engine.execute(s).fetchone() is None else True
+        #self.session.close()
         return r
 
     def get_engine(self):
         return self.session, BooksTable
+    
+    @staticmethod
+    def concurrent_handler(data: object = None):
+        pages = data['bloque']
+        engine = data['engine']['class']
+        eng = engine(**data['engine']['args'])
+        eng.total_pages()
+        for b in pages:
+            eng.process_page(page_number=b)
+        eng.data_engine.session.close()
+        return True
 
     def search(self, criteria: str = '', limit: int = 10, format: str = 'table'):
         total_in_db = self.session.query(BooksTable.id).count() 
