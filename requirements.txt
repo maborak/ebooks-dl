@@ -7,3 +7,5 @@ bs4
 termtables
 terminaltables
 termcolor
+progress
+alive-progress

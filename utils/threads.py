@@ -4,7 +4,7 @@ import concurrent.futures
 class Concurrent():
 
     def schedule(self, tasks: list = [], engine: object = None, handler: object = None, callback: object = None):
-        print(tasks)
+        #print(tasks)
         threads = len(tasks)
         with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
             processed_pool = {executor.submit(

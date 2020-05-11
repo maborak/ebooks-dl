@@ -9,27 +9,31 @@ db_metadata = MetaData()
 class BooksTable(Base):
     __tablename__ = 'books'
 
-    id = Column(Integer(), primary_key=True)
+    uid = Column(Integer(), primary_key=True)
     title = Column(String(255))
-    date = Column(Date())
-    pages = Column(Integer())
+    date = Column(Date(), nullable=True)
+    pages = Column(Integer(), default=0)
     language = Column(String(255))
+    duration = Column(Integer())
+    duration_literal = Column(String(255))
+    thumbnail = Column(String(255))
     code = Column(String(255))
     url = Column(String(255))
     author = Column(String(255))
     publisher = Column(String(255))
     isbn10 = Column(String(255))
     isbn13 = Column(String(255))
-    thumbnail = Column(String(255))
     description = Column(Text)
     engine = Column(String(255))
     format = Column(String(255), default="text")
     size = Column(Integer(), default=0)
+    size_literal = Column(String(255))
     rating = Column(Float(), default=0.0)
+    link_status = Column(String(255), default='up')
 
 
 bt = Table('books', db_metadata,
-           Column('id', Integer(), primary_key=True),
+           Column('uid', Integer(), primary_key=True),
            Column('title', String(255)),
            Column('date', Date()),
            Column('pages', Integer(), default=0),

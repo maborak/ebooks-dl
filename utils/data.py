@@ -9,6 +9,8 @@ from terminaltables import AsciiTable
 import textwrap
 from termcolor import colored
 from utils.number import number_format
+from pprint import pprint as pp
+import time
 
 
 class DataEngine():
@@ -32,24 +34,37 @@ class DataEngine():
             self.db_metadata.create_all(self.engine)
 
     def drop_all(self):
-        print(colored("Executing DROP in: ","red") + self.__default__orm)
+        print(colored("Executing DROP in: ", "red") + self.__default__orm)
         self.db_metadata.drop_all(self.engine)
         self.db_metadata.create_all(self.engine)
 
     def save(self, book_data: list = []) -> bool:
+        if not book_data:
+            return False
         if self.use_orm is True:
-            self.session.add(BooksTable(**book_data))
-            result = self.session.commit()
+            try:
+                self.session.add(BooksTable(**book_data))
+                result = self.session.commit()
+            except Exception as e:
+                print(colored("Cannot save data!", "red"))
+                print('-------------- DATA BEGIN --------------')
+                pp(book_data)
+                print('--------------  DATA END  --------------')
+                print('--------------  ERROR BEGIN  --------------')
+                pp(e)
+                print('--------------   ERROR END  --------------')
+
+                result = False
         else:
             result = self.engine.execute(bt.insert().values([book_data]))
         return result
 
-    def isset_code(self, code: str = '') -> bool:
+    def isset_code(self, code: str = '', engine: str = '') -> bool:
         if self.use_orm is True:
-            isset = self.session.query(BooksTable.id).filter(BooksTable.code == code)
+            isset = self.session.query(BooksTable.uid).filter(BooksTable.code == code, BooksTable.engine == engine)
             r = False if isset.first() is None else True
         else:
-            s = select([bt.c.id]).where(bt.c.code == code)
+            s = select([bt.c.uid]).where(bt.c.code == code)
             r = False if self.engine.execute(s).fetchone() is None else True
         #self.session.close()
         return r
@@ -64,12 +79,12 @@ class DataEngine():
         eng = engine(**data['engine']['args'])
         eng.count_total_pages()
         for b in pages:
-            eng.process_page(page_number=b)
+            eng.process_page(page_number=b, progressbar=data['engine']['progressbar'])
         eng.data_engine.session.close()
         return True
 
     def search(self, criteria: str = '', limit: int = 10, format: str = 'table'):
-        total_in_db = self.session.query(BooksTable.id).count() 
+        total_in_db = self.session.query(BooksTable.uid).count() 
         r = self.session.query(BooksTable.title, BooksTable.date, BooksTable.pages, BooksTable.url)\
                 .filter(BooksTable.title.like(criteria))\
                 .order_by(desc(BooksTable.date))\
@@ -86,8 +101,8 @@ class DataEngine():
             data.append([
                 str(book.date),
                 book.pages,
-                textwrap.fill(book.title, 150),
-                textwrap.fill(book.url, 150)])
+                textwrap.fill(book.title, 110),
+                textwrap.fill(book.url, 110)])
         if format == 'table':
             if len(data) == 0:
                 tt.print([[f"No results for: {criteria}"]], style=tt.styles.ascii_thin)
