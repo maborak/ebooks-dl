@@ -1,49 +1,26 @@
-import ssl
-import urllib.request
-import time
-import urllib3
+import requests
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
+import random
+from pprint import pprint as pp
+
+s = requests.Session()
+retries = Retry(total=15,
+                backoff_factor=random.randint(1, 5),
+                status_forcelist=[500, 502, 503, 504])
+
+s.mount('https://', HTTPAdapter(max_retries=retries))
+s.mount('http://', HTTPAdapter(max_retries=retries))
 
 
 def wget(url: str, referer: str = '') -> str:
-    http = urllib3.PoolManager()
     headers = {
         'Referer': referer if referer else 'https://google.com/',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
     }
-    try:
-        r = http.request('GET', url, headers=headers)
-        print(r.status)
-        return r.data
-    except Exception as e:
-        print("-------------- http-error BEGIN --------------")
-        print(e)
-        print("-------------- http-error ENG --------------")
-        return ''
-    
-
-
-def wget2(url: str, referer: str = '') -> str:
-    """Request page URL
-
-    Arguments:
-        url {str} -- [description]
-
-    Returns:
-        str -- [description]
-    """
-    time.sleep(2)
-    context = ssl._create_unverified_context()
-    req = urllib.request.Request(
-        url,
-        data=None,
-        headers={
-            'Referer': referer if referer else 'https://google.com/',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-        }
-    )
-    try:
-        f = urllib.request.urlopen(req, context=context)
-        return f.read()
-    except Exception as e:
-        print(e)
-        return ''
+    data = s.get(url, headers=headers)
+    # pp(data.request.headers)
+    # exit()
+    if data.status_code != 200:
+        print(f"||||||||||||||||||||||||||||| {url} : {data.status_code}")
+    return data.content

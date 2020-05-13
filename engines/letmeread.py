@@ -3,6 +3,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from utils.http import wget
 from utils.data import DataEngine
+from dateutil import parser, tz
 
 
 class Engine(object):
@@ -31,6 +32,11 @@ class Engine(object):
         item_url = self.baseurl + "/" + code + "/"
         bs = BeautifulSoup(wget(item_url), 'html.parser')
         try:
+            du = bs.find("meta", {'property': 'article:published_time'})['content']
+            date_posted = parser.parse(du).date()
+        except Exception:
+            date_posted = None
+        try:
             thumb = bs.find("img", {'class': 'align-self-start img-fluid'})['src']
         except Exception:
             thumb = 'none'
@@ -40,7 +46,8 @@ class Engine(object):
             description = 'none'
         data = {
             'title': "none",
-            'date': None,
+            'date_published': None,
+            'date_posted': date_posted,
             'pages': 0,
             'language': "none",
             'code': code,
@@ -76,15 +83,15 @@ class Engine(object):
             elif(ititle == "Publication Date"):
                 try:
                     d = datetime.strptime(ivalue, '%Y').date()
-                    data['date'] = d
+                    data['date_published'] = d
                 except Exception:
                     try:
                         d = datetime.strptime(ivalue, '%Y-%m-%d').date()
-                        data['date'] = d
+                        data['date_published'] = d
                     except Exception:
                         try:
                             d = datetime.strptime(ivalue, '%Y-%m').date()
-                            data['date'] = d
+                            data['date_published'] = d
                         except Exception:
                             pass
             elif(ititle =="ISBN-10"):
@@ -162,7 +169,7 @@ class Engine(object):
             processed = self.process_item(i.code)
             print("------------------ begin ----------------------")
             #table.__table__.update().where(table.id==i.id).values(date=processed['date'])
-            session.query(table).filter(table.id == i.id).update({table.date: processed['date']}, synchronize_session = False)
+            session.query(table).filter(table.uid == i.uid).update({table.date_published: processed['date_published']}, synchronize_session = False)
             pp.pprint((processed['url'], ": ", processed['date']))
             print("------------------ end -----------------------")
             session.commit()

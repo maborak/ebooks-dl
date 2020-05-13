@@ -85,24 +85,26 @@ class DataEngine():
 
     def search(self, criteria: str = '', limit: int = 10, format: str = 'table'):
         total_in_db = self.session.query(BooksTable.uid).count() 
-        r = self.session.query(BooksTable.title, BooksTable.date, BooksTable.pages, BooksTable.url)\
+        r = self.session.query(BooksTable.title, BooksTable.date_published, BooksTable.pages, BooksTable.url, BooksTable.isbn13)\
                 .filter(BooksTable.title.like(criteria))\
-                .order_by(desc(BooksTable.date))\
+                .order_by(desc(BooksTable.date_published))\
                 .limit(limit)
         data = []
         #print(self.__default__orm)
         header = [
             colored('Date', "cyan", attrs=['bold']),
             colored('Pages', "cyan", attrs=['bold']),
+            colored('ISBN13', "cyan", attrs=['bold']),
             colored('Title', "cyan", attrs=['bold']),
             colored('Url', "cyan", attrs=['bold'])
         ]
         for book in r:
             data.append([
-                str(book.date),
+                str(book.date_published),
                 book.pages,
-                textwrap.fill(book.title, 110),
-                textwrap.fill(book.url, 110)])
+                book.isbn13,
+                textwrap.fill(book.title, 90),
+                textwrap.fill(book.url, 100)])
         if format == 'table':
             if len(data) == 0:
                 tt.print([[f"No results for: {criteria}"]], style=tt.styles.ascii_thin)

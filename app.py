@@ -1,10 +1,9 @@
-from engines import letmeread
-from engines import coderprog
 from utils import data
-from utils.number import chunkit
 import argparse
+from utils.number import chunkit
 from utils.threads import Concurrent
 from utils.data import DataEngine
+from utils.utils import get_engine
 from alive_progress import alive_bar
 
 parser = argparse.ArgumentParser()
@@ -18,13 +17,7 @@ parser.add_argument('--limit', action="store", type=int, default=10)
 parser.add_argument('--engine', action="store", type=str, default='letmeread')
 
 args, _ = parser.parse_known_args()
-if args.engine == 'letmeread':
-    engine = letmeread
-elif args.engine == 'coderprog':
-    engine = coderprog
-else:
-    print("Aborting. Invalid engine")
-    exit()
+engine = get_engine(args.engine)
 
 if args.search is not None:
     de = data.DataEngine(orm=args.orm)
@@ -42,6 +35,7 @@ else:
         pools = chunkit(nop, args.threads)
         del lr
         total_predicted_items = len(nop) * items_per_page
+        print(f"Total pages: {len(nop)}, Items per page: {items_per_page}")
         #bar = Bar('Another Thread', max=total_predicted_items)
         with alive_bar(total_predicted_items, bar='blocks') as bar:
             engine = {

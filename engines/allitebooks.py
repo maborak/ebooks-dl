@@ -9,10 +9,10 @@ from dateutil import parser
 
 class Engine(object):
     """
-    Engine to process: https://coderprog.com/
+    Engine to process: http://www.allitebooks.org/
     """
-    __host__ = 'coderprog'
-    baseurl: str = "https://coderprog.com"
+    __host__ = 'allitebooks'
+    baseurl: str = "http://www.allitebooks.org/"
     total_of_pages: int = 0
     total_of_pages_classified: int = 0
     orm: str = ''
@@ -29,83 +29,75 @@ class Engine(object):
             result = False
         return result
 
-    def process_item(self, code: str, referer: str = '') -> object:
-        item_url = self.baseurl + "/" + code + "/"
-        #item_url = "https://coderprog.com/red-hat-certified-engineer-rhel-8-rhce/"
+    def process_item(self, code: str, referer: str = '', url: str = None) -> object:
+        if url is None:
+            return False
+        item_url = url
         bs = BeautifulSoup(wget(item_url, referer=referer), 'html.parser')
-        du = bs.find("span", {'class': 'thetime date updated'}).get_text().strip()
         try:
-            du = bs.find("span", {'class': 'thetime date updated'}).get_text().strip()
-            date_posted = parser.parse(du).date()
+            title = bs.find("h1", {'class': 'single-title'}).get_text()
+            try:
+                sub = bs.find("header", {'class': 'entry-header'}).find("h4").get_text().strip()
+                sub = ": " + sub
+            except Exception:
+                sub = ""
+            title = f"{title}{sub}"
+        except Exception:
+            title = 'none'
+        try:
+            du = re.search("/uploads/([0-9]+)/([0-9]+)/", bs.find("img", {'class': 'attachment-post-thumbnail'})['src'].strip())
+            date_posted = datetime.strptime(f"{du[1]}-{du[2]}", "%Y-%m").date()
         except Exception:
             date_posted = None
         try:
-            thumb = self.baseurl + bs.find("div", {'class': 'thecontent'}).find("img")['src']    
+            thumb = bs.find("img", {'class': 'attachment-post-thumbnail'})['src'].strip()
         except Exception:
             thumb = 'none'
         try:
-            description = 'none'
+            description = bs.find("div", "entry-content")
+            description.find("h3").decompose()
         except Exception:
             description = 'none'
+        submetadata = bs.find("div", {'class': 'book-detail'}).findAll("dd")
+        #pp(submetadata)
+        #exit()
         try:
-            title = bs.find("div", {'class': 'thecontent'}).find("img")['alt']    
+            mdate = submetadata[2].get_text().strip()
+            date_published = datetime.strptime(mdate, '%Y').date()
         except Exception:
-            title = 'none'
-        metadata = bs.find("div", {'class': 'thecontent'}).findAll("div")[0].get_text().strip().split("\n")[1]
-        submetadata = metadata.split("|")
-        video = True if "MP4" in metadata else False
-        if video is True:
             date_published = None
+        try:
+            author = submetadata[0].get_text().strip()
+        except Exception:
+            author = None
+        try:
+            publisher = None
+        except Exception:
+            publisher = None
+        try:
+            pages = submetadata[3].get_text().strip()
+        except Exception:
             pages = 0
-            try:
-                language = submetadata[0].strip()
-            except Exception:
-                language = 0
-            try:
-                size = 0
-                size_literal = submetadata[-1].strip()
-            except Exception:
-                size = 0
-                size_literal = None
-            try:
-                duration = 0
-                duration_literal = submetadata[-2].strip()
-            except Exception:
-                duration = None
-                duration_literal = None
-            isbn10 = isbn13 = 0
-
-        else:
-            try:
-                mdate = submetadata[1].strip()
-                date_published = datetime.strptime(mdate, '%Y').date()
-            except Exception:
-                date_published = None
-            try:
-                pages = submetadata[3].strip()
-                pages = re.search("([0-9]+) Pages", pages)[1]
-            except Exception:
-                pages = 0
-            try:
-                language = submetadata[0].strip()
-            except Exception:
-                language = 0
-            try:
-                s = submetadata[5].strip()
-                size = int(re.search("([0-9]+) MB", s)[1]) * 1024 * 1024
-                size_literal = s
-            except Exception:
-                size = 0
-                size_literal = None
-            try:
-                isbn = submetadata[2].strip()
-                ib = re.search("ISBN: ([0-9]+)", isbn)[1]
-                isbn13 = "978-" + ib
-                isbn10 = ib
-            except Exception:
-                isbn13 = 0
-                isbn10 = 0
-            duration_literal = duration = None
+        try:
+            language = submetadata[4].get_text().strip()
+        except Exception:
+            language = None
+        s = submetadata[5].get_text().strip()
+        try:
+            s = submetadata[5].get_text().strip()
+            size = int(round(float(re.search("(.*) MB", s)[1]))) * 1024 * 1024
+            size_literal = s
+        except Exception:
+            size = 0
+            size_literal = None
+        try:
+            isbn = submetadata[1].get_text().strip().replace("-", "").split(",")[0]
+            isbn13 = f"978{isbn}" if len(isbn) < 13 else isbn
+            isbn10 = isbn
+        except Exception:
+            isbn13 = 0
+            isbn10 = 0
+        duration_literal = duration = None
         data = {
             'title': title,
             'date_published': date_published,
@@ -114,13 +106,13 @@ class Engine(object):
             'language': language,
             'code': code,
             'url': item_url,
-            'author': "none",
-            'publisher': "none",
+            'author': author,
+            'publisher': publisher,
             'isbn10': isbn10,
             'isbn13': isbn13,
             'thumbnail': thumb,
             'engine': self.__host__,
-            'format': 'text' if video is False else "video",
+            'format': 'text',
             'size': size,
             'size_literal': size_literal,
             'duration': duration,
@@ -131,39 +123,34 @@ class Engine(object):
 
     def process_page(self, page_number: int = 1, progressbar: object = None) -> []:
         #print("Processing Page: " + str(page_number) + " of " + str(self.total_of_pages))
-        page_url = self.baseurl + "/page/" + str(page_number) + "/" if page_number > 1 else self.baseurl
+        page_url = f"{self.baseurl}/page/{page_number}/" if page_number > 1 else self.baseurl
         bs = BeautifulSoup(wget(page_url), 'html.parser')
-        nameList = bs.find("div", {'id': 'content_box'}).findAll('article', {'class': 'latestPost'})
+        nameList = bs.find("div", {'class':'main-content-inner'}).findAll("article", {'class': 'post'})
         data = []
         for _index, i in enumerate(nameList):
             if progressbar is not None:
                 progressbar()
-            
             data = i.find('h2').find('a')
-            data_text = data.get_text()
             code = data['href'].replace(self.baseurl, "").replace("/", "")
-            #print(f"\t\t[page={page_number}]item: " + str(index + 1) + " of " + str(len(nameList)))
+            url = data['href']
             isset = self.data_engine.isset_code(code=code, engine=self.__host__)
-            #print(f"{code} => {isset}")
             if isset is False:
                 try:
-                    book_data = self.process_item(code=code, referer=page_url)
+                    book_data = self.process_item(code=code, referer=page_url, url=url)
                     self.item_save(book_data=book_data)
                     pass
                 except Exception as e:
-                    print(f"Error processing page: {page_url} , title: {data_text}, item: " + self.baseurl + "/" + code + "/")
+                    print(f"Error processing page: {page_url} , title: {data.get_text()}, item: " + url)
                     print(e)
         return True
 
     def count_total_pages(self) -> int:
         bs = BeautifulSoup(wget(self.baseurl), 'html.parser')
-        content = bs.findAll("a", {'class': 'page-numbers'})
-        total_pages = int(content[-2].get_text().strip().replace(",", ""))
-        
-        total_items = bs.find("div", {'id': 'content_box'}).findAll('article', {'class': 'latestPost'})
+        content = bs.find("div", {'class': 'main-content-inner'}).findAll("article")
+        total_pages = int(bs.find("div", {'class': 'pagination'}).findAll("a")[-1].get_text())
         self.total_of_pages = total_pages
-        self.totat_items_per_page = len(total_items)
-        return total_pages, self.totat_items_per_page
+        self.total_items_per_page = len(content)
+        return total_pages, self.total_items_per_page
 
     def num_of_pages_to_process(self, start_from_page: int = 1) -> ([], int):
         """

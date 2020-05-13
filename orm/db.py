@@ -11,7 +11,8 @@ class BooksTable(Base):
 
     uid = Column(Integer(), primary_key=True)
     title = Column(String(255))
-    date = Column(Date(), nullable=True)
+    date_published = Column(Date(), nullable=True)
+    date_posted = Column(Date(), nullable=True)
     pages = Column(Integer(), default=0)
     language = Column(String(255))
     duration = Column(Integer())
