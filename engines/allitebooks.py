@@ -125,7 +125,7 @@ class Engine(object):
         #print("Processing Page: " + str(page_number) + " of " + str(self.total_of_pages))
         page_url = f"{self.baseurl}/page/{page_number}/" if page_number > 1 else self.baseurl
         bs = BeautifulSoup(wget(page_url), 'html.parser')
-        nameList = bs.find("div", {'class':'main-content-inner'}).findAll("article", {'class': 'post'})
+        nameList = bs.find("div", {'class': 'main-content-inner'}).findAll("article", {'class': 'post'})
         data = []
         for _index, i in enumerate(nameList):
             if progressbar is not None:
