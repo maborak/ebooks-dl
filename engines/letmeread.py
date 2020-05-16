@@ -60,7 +60,7 @@ class Engine(object):
             'engine': 'letmeread',
             'format': 'text',
             'size': 0,
-            'description': str(description)
+            'description': (description)
         }
         c = bs.find("ul", {'class': 'list-unstyled mb-0'}).findAll("li")
         for i in c:
@@ -94,7 +94,7 @@ class Engine(object):
                             data['date_published'] = d
                         except Exception:
                             pass
-            elif(ititle =="ISBN-10"):
+            elif(ititle == "ISBN-10"):
                 data['isbn10'] = ivalue
             elif(ititle == "ISBN-13"):
                 data['isbn13'] = ivalue

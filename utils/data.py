@@ -11,8 +11,10 @@ from termcolor import colored
 from utils.number import number_format
 from pprint import pprint as pp
 import time
+import os
 
 
+os.environ['NLS_LANG'] = '.AL32UTF8'
 class DataEngine():
     session: object = None
     engine: object = None
@@ -42,8 +44,18 @@ class DataEngine():
         if not book_data:
             return False
         if self.use_orm is True:
+            # pp(book_data['title'].encode("utf-8"))
+            # exit()
             try:
-                self.session.add(BooksTable(**book_data))
+                sanitized_data = dict(book_data)
+                # sanitized_data['title'] = "😀 😁 😂 🤣 😃 😄 😅 😆 😉 😊 😋".encode("utf-8")
+                # sanitized_data['title'] = "😀 😁 😂 🤣 😃 😄 😅 😆 😉 😊 😋"
+                sanitized_data['title'] = book_data['title']
+                sanitized_data['author'] = book_data['author']
+                sanitized_data['description'] = book_data['title']
+                sanitized_data['publisher'] = book_data['publisher']
+                sanitized_data['language'] = book_data['language']
+                self.session.add(BooksTable(**sanitized_data))
                 result = self.session.commit()
             except Exception as e:
                 print(colored("Cannot save data!", "red"))
@@ -53,7 +65,6 @@ class DataEngine():
                 print('--------------  ERROR BEGIN  --------------')
                 pp(e)
                 print('--------------   ERROR END  --------------')
-
                 result = False
         else:
             result = self.engine.execute(bt.insert().values([book_data]))
@@ -61,17 +72,18 @@ class DataEngine():
 
     def isset_code(self, code: str = '', engine: str = '') -> bool:
         if self.use_orm is True:
-            isset = self.session.query(BooksTable.uid).filter(BooksTable.code == code, BooksTable.engine == engine)
+            isset = self.session.query(BooksTable.uid).filter(
+                BooksTable.code == code, BooksTable.engine == engine)
             r = False if isset.first() is None else True
         else:
             s = select([bt.c.uid]).where(bt.c.code == code)
             r = False if self.engine.execute(s).fetchone() is None else True
-        #self.session.close()
+        # self.session.close()
         return r
 
     def get_engine(self):
         return self.session, BooksTable
-    
+
     @staticmethod
     def concurrent_handler(data: object = None):
         pages = data['bloque']
@@ -79,18 +91,19 @@ class DataEngine():
         eng = engine(**data['engine']['args'])
         eng.count_total_pages()
         for b in pages:
-            eng.process_page(page_number=b, progressbar=data['engine']['progressbar'])
+            eng.process_page(
+                page_number=b, progressbar=data['engine']['progressbar'])
         eng.data_engine.session.close()
         return True
 
     def search(self, criteria: str = '', limit: int = 10, format: str = 'table'):
-        total_in_db = self.session.query(BooksTable.uid).count() 
+        total_in_db = self.session.query(BooksTable.uid).count()
         r = self.session.query(BooksTable.title, BooksTable.date_published, BooksTable.pages, BooksTable.url, BooksTable.isbn13)\
                 .filter(BooksTable.title.like(criteria))\
                 .order_by(desc(BooksTable.date_published))\
                 .limit(limit)
         data = []
-        #print(self.__default__orm)
+        # print(self.__default__orm)
         header = [
             colored('Date', "cyan", attrs=['bold']),
             colored('Pages', "cyan", attrs=['bold']),
@@ -107,13 +120,15 @@ class DataEngine():
                 textwrap.fill(book.url, 100)])
         if format == 'table':
             if len(data) == 0:
-                tt.print([[f"No results for: {criteria}"]], style=tt.styles.ascii_thin)
+                tt.print(
+                    [[f"No results for: {criteria}"]], style=tt.styles.ascii_thin)
             else:
                 h = [header]
                 h.extend(data)
                 title = "---| " + colored("Results for:", "yellow") + colored(f" {criteria} ", "green") + \
                         ", Total DB: " + colored(number_format(total_in_db), "green") + \
-                        ", ORM: " + colored(self.__default__orm, "green") + " |"
+                        ", ORM: " + \
+                    colored(self.__default__orm, "green") + " |"
                 t = AsciiTable(h, title=title)
                 t.inner_row_border = True
                 t.CHAR_OUTER_TOP_LEFT = "╭"
