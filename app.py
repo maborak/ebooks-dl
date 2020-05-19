@@ -18,15 +18,19 @@ parser.add_argument('--orm', action="store", type=str, default="sqlite:///books.
 parser.add_argument('--search', action="store", type=str, default=None)
 parser.add_argument('--limit', action="store", type=int, default=10)
 parser.add_argument('--engine', action="store", type=str, default='letmeread')
+parser.add_argument('--process-item', action="store", type=str, default=None)
+
 
 args, _ = parser.parse_known_args()
 engine = get_engine(args.engine)
 
 
-
 if args.search is not None:
     de = data.DataEngine(orm=args.orm)
     de.search(criteria=args.search, limit=args.limit)
+elif args.process_item is not None:
+    de = engine.Engine(orm=args.orm)
+    print(de.process_item(url=args.process_item, code=None))
 else:
     if args.drop_all is True:
         de = data.DataEngine(orm=args.orm)

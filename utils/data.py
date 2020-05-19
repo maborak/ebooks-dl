@@ -15,10 +15,12 @@ import os
 
 
 os.environ['NLS_LANG'] = '.AL32UTF8'
+
+
 class DataEngine():
     session: object = None
     engine: object = None
-    __default__orm: str = ''
+    __default__orm: str = "sqlite:///books.sqlite3"
     use_orm: bool = True
     db_metadata: object = None
 
@@ -143,3 +145,7 @@ class DataEngine():
         elif format == 'json':
             print(json.dumps(data))
         return data
+
+    def entries(self) -> int:
+        total = self.session.query(BooksTable.uid).count()
+        return total

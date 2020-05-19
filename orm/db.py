@@ -14,8 +14,10 @@ class BooksTable(Base):
         'mysql_collate': 'utf8mb4_general_ci'
     }
 
-    uid = Column(Integer(), Sequence('uid_seq'), primary_key=True)
-    title = Column(String(355, convert_unicode=True, collation="utf8mb4_general_ci"))
+    #uid = Column(Integer(), Sequence('uid_seq'), primary_key=True)
+    uid = Column(Integer(), autoincrement=True, primary_key=True)
+    #title = Column(String(355, convert_unicode=True, collation="utf8mb4_general_ci"))
+    title = Column(String(355, convert_unicode=True))
     date_published = Column(Date(), nullable=True)
     date_posted = Column(Date(), nullable=True)
     pages = Column(Integer(), default=0)

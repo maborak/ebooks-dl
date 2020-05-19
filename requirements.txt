@@ -10,3 +10,5 @@ termcolor
 progress
 alive-progress
 dateutils
+fastapi
+uvicorn 

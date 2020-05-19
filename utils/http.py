@@ -13,7 +13,7 @@ s.mount('https://', HTTPAdapter(max_retries=retries))
 s.mount('http://', HTTPAdapter(max_retries=retries))
 
 
-def wget(url: str, referer: str = '') -> str:
+def wget(url: str, referer: str = '', only_status: bool = False) -> str:
     headers = {
         'Referer': referer if referer else 'https://google.com/',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
@@ -21,6 +21,8 @@ def wget(url: str, referer: str = '') -> str:
     data = s.get(url, headers=headers)
     # pp(data.request.headers)
     # exit()
+    if only_status is True:
+        return data.status_code
     if data.status_code != 200:
         print(f"||||||||||||||||||||||||||||| {url} : {data.status_code}")
     return data.content
