@@ -1,2 +1,2 @@
 # ebooks
-Tools to scrape Ebooks download
+Python API to scrape Ebook download websites.
