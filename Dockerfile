@@ -1,5 +1,6 @@
 FROM python:3.7.3-slim
 COPY src/ /src
+COPY requirements.txt /src/requirements.txt
 RUN pip install -r /src/requirements.txt
 WORKDIR /src
 COPY docker-entrypoint.sh /
