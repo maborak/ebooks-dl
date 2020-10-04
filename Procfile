@@ -1,1 +1,1 @@
-web: uvicorn rest:app --host=0.0.0.0 --port=${PORT:-5000} --reload --header="Server:maborak" --header="build-time:${BUILD_DATE}"
+web: uvicorn src.rest:app --host=0.0.0.0 --port=${PORT:-5000} --reload --header="Server:maborak" --header="build-time:${BUILD_DATE}"
