@@ -7,6 +7,7 @@ from .utils.utils import get_engine
 from alive_progress import alive_bar
 from termcolor import colored
 import itertools
+import os
 
 
 parser = argparse.ArgumentParser()
@@ -14,7 +15,7 @@ parser.add_argument('--start-from-page', action="store", type=int, default=1)
 parser.add_argument('--threads', action="store", type=int, default=0)
 parser.add_argument('--drop-all', action="store_true", default=False)
 parser.add_argument('--fix', action="store_true", default=False)
-parser.add_argument('--orm', action="store", type=str, default="sqlite:///books.sqlite3")
+parser.add_argument('--orm', action="store", type=str, default=os.environ.get("ORM", "sqlite:///books.sqlite3"))
 parser.add_argument('--search', action="store", type=str, default=None)
 parser.add_argument('--limit', action="store", type=int, default=10)
 parser.add_argument('--engine', action="store", type=str, default='letmeread')
