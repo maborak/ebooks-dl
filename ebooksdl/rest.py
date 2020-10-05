@@ -6,7 +6,7 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"Hello": "Lets CI on Heroku"}
+    return {"Hello": "Lets CI on Heroku second edition"}
 
 
 @app.get("/entries")
@@ -22,4 +22,4 @@ def read_otom(item_id: int):
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q }
+    return {"item_id": item_id, "q": q}
