@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, Table, MetaData, Float, Sequence, NVARCHAR
+from sqlalchemy import Column, Integer, String, Text, Date, Table, MetaData, Float, Sequence, NVARCHAR, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -34,7 +34,7 @@ class BooksTable(Base):
     description = Column(Text)
     engine = Column(String(255))
     format = Column(String(255), default="text")
-    size = Column(Integer(), default=0)
+    size = Column(BigInteger(), default=0)
     size_literal = Column(String(255))
     rating = Column(Float(), default=0.0)
     link_status = Column(String(255), default='up')
