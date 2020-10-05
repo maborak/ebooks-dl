@@ -19,7 +19,7 @@ os.environ['NLS_LANG'] = '.AL32UTF8'
 class DataEngine():
     session: object = None
     engine: object = None
-    __default__orm: str = "sqlite:///books.sqlite3"
+    __default__orm: str = os.environ.get("ORM", "sqlite:///books.sqlite3")
     use_orm: bool = True
     db_metadata: object = None
 
