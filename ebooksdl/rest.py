@@ -6,7 +6,7 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"Hello": "Lets CI"}
+    return {"Hello": "Lets CI on Heroku"}
 
 
 @app.get("/entries")
